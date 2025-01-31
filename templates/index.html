@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор сумм</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        .btn-custom {
+            margin: 5px;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        .message-counter {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Калькулятор сумм</h1>
+        
+        <div class="row mb-4">
+            <div class="col text-center">
+                <button id="newCount" class="btn btn-primary btn-custom">
+                    📝 Новый подсчет
+                </button>
+                <button id="clear" class="btn btn-secondary btn-custom">
+                    🔄 Очистить
+                </button>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="messageInput" class="form-label">Введите данные в формате: Название - число</label>
+            <textarea class="form-control" id="messageInput" rows="4" placeholder="Пример:&#10;Продукты - 1000&#10;Транспорт - 500"></textarea>
+        </div>
+        
+        <div class="text-center">
+            <button id="send" class="btn btn-success">Отправить</button>
+        </div>
+
+        <div id="results" class="mt-4">
+            <h4>Результаты:</h4>
+            <div id="valuesList"></div>
+            <div class="message-counter" id="messageCounter"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('send');
+            const newCountButton = document.getElementById('newCount');
+            const clearButton = document.getElementById('clear');
+            const valuesList = document.getElementById('valuesList');
+            const messageCounter = document.getElementById('messageCounter');
+
+            async function sendMessage(endpoint, data = {}) {
+                try {
+                    const response = await fetch(`/api/${endpoint}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    return await response.json();
+                } catch (error) {
+                    console.error('Ошибка:', error);
+                }
+            }
+
+            function updateResults(values, messageCount, maxMessages) {
+                valuesList.innerHTML = Object.entries(values)
+                    .map(([name, value]) => `<div>${name}: ${value}</div>`)
+                    .join('');
+                
+                messageCounter.textContent = `Отправлено ${messageCount} из ${maxMessages} сообщений`;
+                
+                if (messageCount >= maxMessages) {
+                    messageCounter.textContent += "\nДостигнут лимит сообщений. Следующее сообщение начнет новый отсчет.";
+                }
+            }
+
+            sendButton.addEventListener('click', async () => {
+                const message = messageInput.value.trim();
+                if (message) {
+                    const response = await sendMessage('process', { message });
+                    updateResults(response.values, response.message_count, response.max_messages);
+                    messageInput.value = '';
+                }
+            });
+
+            newCountButton.addEventListener('click', async () => {
+                await sendMessage('new_count');
+                valuesList.innerHTML = '';
+                messageCounter.textContent = 'Начат новый подсчет';
+            });
+
+            clearButton.addEventListener('click', async () => {
+                await sendMessage('clear');
+                valuesList.innerHTML = '';
+                messageCounter.textContent = 'История очищена';
+            });
+        });
+    </script>
+</body>
+</html> 
