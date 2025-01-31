@@ -73,53 +73,86 @@
             const valuesList = document.getElementById('valuesList');
             const messageCounter = document.getElementById('messageCounter');
 
-            async function sendMessage(endpoint, data = {}) {
-                try {
-                    const response = await fetch(`/api/${endpoint}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(data)
-                    });
-                    return await response.json();
-                } catch (error) {
-                    console.error('Ошибка:', error);
+            let values = {};
+            let messageCount = 0;
+            const MAX_MESSAGES = 6;
+
+            function parseLine(line) {
+                const parts = line.split('-');
+                if (parts.length >= 2) {
+                    const name = parts[0].trim();
+                    const valuePart = parts.slice(1).join('-').trim();
+                    const value = parseInt(valuePart);
+                    if (!isNaN(value)) {
+                        return [name, value];
+                    }
                 }
+                return null;
             }
 
-            function updateResults(values, messageCount, maxMessages) {
+            function updateResults() {
                 valuesList.innerHTML = Object.entries(values)
                     .map(([name, value]) => `<div>${name}: ${value}</div>`)
                     .join('');
                 
-                messageCounter.textContent = `Отправлено ${messageCount} из ${maxMessages} сообщений`;
+                messageCounter.textContent = `Отправлено ${messageCount} из ${MAX_MESSAGES} сообщений`;
                 
-                if (messageCount >= maxMessages) {
+                if (messageCount >= MAX_MESSAGES) {
                     messageCounter.textContent += "\nДостигнут лимит сообщений. Следующее сообщение начнет новый отсчет.";
                 }
             }
 
-            sendButton.addEventListener('click', async () => {
+            sendButton.addEventListener('click', () => {
                 const message = messageInput.value.trim();
-                if (message) {
-                    const response = await sendMessage('process', { message });
-                    updateResults(response.values, response.message_count, response.max_messages);
-                    messageInput.value = '';
+                if (!message) return;
+
+                messageCount++;
+                if (messageCount > MAX_MESSAGES) {
+                    values = {};
+                    messageCount = 1;
                 }
+
+                const lines = message.split('\n');
+                for (const line of lines) {
+                    const result = parseLine(line);
+                    if (result) {
+                        const [name, value] = result;
+                        values[name] = (values[name] || 0) + value;
+                    }
+                }
+
+                updateResults();
+                messageInput.value = '';
             });
 
-            newCountButton.addEventListener('click', async () => {
-                await sendMessage('new_count');
+            newCountButton.addEventListener('click', () => {
+                values = {};
+                messageCount = 0;
                 valuesList.innerHTML = '';
                 messageCounter.textContent = 'Начат новый подсчет';
             });
 
-            clearButton.addEventListener('click', async () => {
-                await sendMessage('clear');
+            clearButton.addEventListener('click', () => {
+                values = {};
+                messageCount = 0;
                 valuesList.innerHTML = '';
                 messageCounter.textContent = 'История очищена';
             });
+
+            // Сохранение данных в localStorage
+            window.addEventListener('beforeunload', () => {
+                localStorage.setItem('calculatorValues', JSON.stringify(values));
+                localStorage.setItem('messageCount', messageCount);
+            });
+
+            // Загрузка данных из localStorage
+            const savedValues = localStorage.getItem('calculatorValues');
+            const savedCount = localStorage.getItem('messageCount');
+            if (savedValues && savedCount) {
+                values = JSON.parse(savedValues);
+                messageCount = parseInt(savedCount);
+                updateResults();
+            }
         });
     </script>
 </body>
