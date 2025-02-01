@@ -9,24 +9,6 @@
     <title>Калькулятор сумм</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-    <script>
-        // Добавляем случайный параметр к URL для предотвращения кэширования
-        if (window.location.href.indexOf('nocache') === -1) {
-            window.location.href = window.location.href + (window.location.href.indexOf('?') === -1 ? '?' : '&') + 'nocache=' + Math.random();
-        }
-
-        // Отключаем кэширование для всех запросов
-        window.addEventListener('load', function() {
-            try {
-                window.applicationCache.addEventListener('updateready', function() {
-                    window.applicationCache.swapCache();
-                    window.location.reload(true);
-                });
-            } catch (e) {
-                console.log('AppCache not supported');
-            }
-        });
-    </script>
     <style>
         :root {
             --bg-color: #f8f9fa;
@@ -251,43 +233,12 @@
     </div>
 
     <script>
-        // Версия приложения
-        const APP_VERSION = '1.0.2';
-
-        // Функция для принудительного обновления страницы без кэша
-        function forceRefresh() {
-            window.location.href = window.location.pathname;
-        }
-
-        // Функция для очистки кэша
-        async function clearCache() {
-            try {
-                // Очищаем кэш браузера
-                if ('caches' in window) {
-                    const cacheNames = await caches.keys();
-                    await Promise.all(cacheNames.map(name => caches.delete(name)));
-                }
-                
-                // Очищаем Service Worker если он есть
-                if ('serviceWorker' in navigator) {
-                    const registrations = await navigator.serviceWorker.getRegistrations();
-                    await Promise.all(registrations.map(registration => registration.unregister()));
-                }
-
-                // Очищаем localStorage кроме темы
-                const theme = localStorage.getItem('theme');
-                const values = localStorage.getItem('calculatorValues');
-                const count = localStorage.getItem('messageCount');
-                localStorage.clear();
-                if (theme) localStorage.setItem('theme', theme);
-                if (values) localStorage.setItem('calculatorValues', values);
-                if (count) localStorage.setItem('messageCount', count);
-            } catch (error) {
-                console.error('Ошибка при очистке кэша:', error);
-            }
-        }
-
         document.addEventListener('DOMContentLoaded', function() {
+            // Если в URL есть параметры, удаляем их
+            if (window.location.search) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+
             const messageInput = document.getElementById('messageInput');
             const sendButton = document.getElementById('send');
             const newCountButton = document.getElementById('newCount');
