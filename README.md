@@ -31,11 +31,6 @@ venv\Scripts\activate     # для Windows
 pip install -r requirements.txt
 ```
 
-4. Создайте файл .env и добавьте секретный ключ:
-```
-SECRET_KEY=ваш-секретный-ключ
-```
-
 ## Запуск
 
 ```bash
