@@ -450,22 +450,34 @@
                     const proxyUrl = 'https://corsproxy.io/?';
                     const telegramUrl = 'https://t.me/s/OtchetProdag';
                     
+                    console.log('Загрузка с URL:', telegramUrl);
                     const response = await fetch(proxyUrl + encodeURIComponent(telegramUrl));
                     if (!response.ok) {
                         throw new Error('Ошибка загрузки: ' + response.status);
                     }
                     const html = await response.text();
+                    console.log('Получен HTML:', html.substring(0, 200) + '...');
                     
                     // Создаем DOM parser для разбора HTML
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
                     
-                    // Получаем все сообщения
-                    const messages = Array.from(doc.querySelectorAll('.tgme_widget_message_text'));
-                    console.log('Найдено сообщений:', messages.length);
-
+                    // Получаем все сообщения (пробуем разные селекторы)
+                    let messages = Array.from(doc.querySelectorAll('.tgme_widget_message_wrap .tgme_widget_message_text'));
                     if (messages.length === 0) {
-                        throw new Error('Сообщения не найдены');
+                        messages = Array.from(doc.querySelectorAll('.js-message_text'));
+                    }
+                    if (messages.length === 0) {
+                        messages = Array.from(doc.querySelectorAll('[class*="message_text"]'));
+                    }
+                    
+                    console.log('Найдено сообщений:', messages.length);
+                    
+                    if (messages.length === 0) {
+                        // Если сообщения не найдены, попробуем найти любой текст
+                        const bodyText = doc.body.textContent;
+                        console.log('Текст страницы:', bodyText.substring(0, 200) + '...');
+                        throw new Error('Сообщения не найдены. Проверьте консоль для деталей.');
                     }
 
                     // Берем последние 6 сообщений
@@ -484,19 +496,22 @@
                         const lines = text.split('\n').map(line => line.trim()).filter(line => line);
                         
                         lines.forEach(line => {
-                            // Проверяем, содержит ли строка тире и число
-                            if (line.includes('-')) {
-                                const parts = line.split('-').map(part => part.trim());
-                                const name = parts[0];
-                                // Ищем число в последней части
-                                const numberMatch = parts[parts.length - 1].match(/\d+/);
-                                
-                                if (numberMatch) {
-                                    const value = parseInt(numberMatch[0]);
-                                    if (!isNaN(value)) {
-                                        console.log('Найдено значение:', name, value);
-                                        values[name] = (values[name] || 0) + value;
-                                        messageCount++;
+                            // Проверяем, содержит ли строка тире или двоеточие
+                            if (line.includes('-') || line.includes(':')) {
+                                // Разбиваем по тире или двоеточию
+                                const parts = line.split(/[-:]/).map(part => part.trim());
+                                if (parts.length >= 2) {
+                                    const name = parts[0];
+                                    // Ищем число в последней части
+                                    const numberMatch = parts[parts.length - 1].match(/\d+/);
+                                    
+                                    if (numberMatch) {
+                                        const value = parseInt(numberMatch[0]);
+                                        if (!isNaN(value)) {
+                                            console.log('Найдено значение:', name, value);
+                                            values[name] = (values[name] || 0) + value;
+                                            messageCount++;
+                                        }
                                     }
                                 }
                             }
