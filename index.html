@@ -447,8 +447,8 @@
                     loadTelegramButton.innerHTML = '⌛ Загрузка...';
 
                     // Создаем прокси URL для обхода CORS
-                    const proxyUrl = 'https://api.allorigins.win/raw?url=';
-                    const telegramUrl = 'https://t.me/s/OtchetProdag'; // Используем публичный URL канала
+                    const proxyUrl = 'https://corsproxy.io/?';
+                    const telegramUrl = 'https://t.me/s/OtchetProdag';
                     
                     const response = await fetch(proxyUrl + encodeURIComponent(telegramUrl));
                     const html = await response.text();
@@ -457,8 +457,15 @@
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
                     
-                    // Получаем последние сообщения
+                    // Получаем все сообщения
                     const messages = doc.querySelectorAll('.tgme_widget_message_text');
+                    console.log('Найдено сообщений:', messages.length);
+                    
+                    if (messages.length === 0) {
+                        throw new Error('Сообщения не найдены');
+                    }
+
+                    // Берем последние 6 сообщений
                     const lastMessages = Array.from(messages).slice(-6);
                     
                     // Очищаем текущие значения
@@ -466,25 +473,42 @@
                     messageCount = 0;
                     
                     // Обрабатываем каждое сообщение
-                    lastMessages.forEach(msg => {
+                    lastMessages.forEach((msg, index) => {
+                        console.log(`Обработка сообщения ${index + 1}:`, msg.textContent);
                         const text = msg.textContent.trim();
-                        const lines = text.split('\n');
                         
+                        // Разбиваем текст на строки и ищем числа
+                        const lines = text.split(/[\n\r]+/);
                         lines.forEach(line => {
-                            const result = parseLine(line);
-                            if (result) {
-                                const [name, value] = result;
-                                values[name] = (values[name] || 0) + value;
-                                messageCount++;
+                            // Ищем все числа в строке
+                            const numbers = line.match(/-?\d+/g);
+                            if (numbers) {
+                                const value = parseInt(numbers[numbers.length - 1]);
+                                // Ищем название (текст до числа)
+                                let name = line.split(numbers[numbers.length - 1])[0]
+                                    .replace(/[-:]/g, '')
+                                    .trim();
+                                
+                                if (name && !isNaN(value)) {
+                                    console.log('Найдено:', name, value);
+                                    values[name] = (values[name] || 0) + value;
+                                    messageCount++;
+                                }
                             }
                         });
                     });
                     
+                    console.log('Итоговые значения:', values);
+                    
                     // Обновляем результаты
                     updateResults();
                     
-                    // Показываем уведомление об успехе
-                    loadTelegramButton.innerHTML = '✅ Загружено';
+                    if (Object.keys(values).length === 0) {
+                        loadTelegramButton.innerHTML = '⚠️ Нет данных';
+                    } else {
+                        loadTelegramButton.innerHTML = '✅ Загружено';
+                    }
+                    
                     setTimeout(() => {
                         loadTelegramButton.innerHTML = '📱 Загрузить из Telegram';
                         loadTelegramButton.disabled = false;
@@ -492,7 +516,7 @@
                     
                 } catch (error) {
                     console.error('Ошибка при загрузке из Telegram:', error);
-                    loadTelegramButton.innerHTML = '❌ Ошибка загрузки';
+                    loadTelegramButton.innerHTML = '❌ Ошибка: ' + error.message;
                     setTimeout(() => {
                         loadTelegramButton.innerHTML = '📱 Загрузить из Telegram';
                         loadTelegramButton.disabled = false;
