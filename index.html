@@ -443,60 +443,57 @@
             // Добавляем функцию для парсинга Telegram
             async function parseTelegramChannel() {
                 try {
-                    console.log('🚀 Начинаем получение данных из Telegram...');
+                    console.log('🚀 Начинаем парсинг Telegram канала...');
                     
-                    // Проверяем инициализацию Telegram WebApp
-                    if (!window.Telegram || !window.Telegram.WebApp) {
-                        throw new Error('Telegram WebApp не инициализирован');
+                    // Создаем URL для запроса
+                    const channelUrl = 'https://t.me/s/OtchetProdag';
+                    console.log('📡 Запрашиваем данные с:', channelUrl);
+                    
+                    // Делаем запрос напрямую
+                    const response = await fetch(channelUrl);
+                    console.log('📥 Получен ответ:', response.status, response.statusText);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Ошибка загрузки: ${response.status} ${response.statusText}`);
                     }
-
-                    console.log('✅ Telegram WebApp инициализирован');
-                    const webApp = window.Telegram.WebApp;
                     
-                    // Запрашиваем данные через Telegram WebApp
-                    webApp.expand(); // Разворачиваем WebApp на весь экран
+                    const html = await response.text();
+                    console.log('📄 Получен HTML:', html.length, 'символов');
                     
-                    // Пробуем получить данные из канала
-                    const channelName = 'OtchetProdag';
-                    console.log('📡 Запрашиваем данные из канала:', channelName);
+                    // Создаем временный элемент для парсинга HTML
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = html;
                     
-                    // Отправляем запрос к каналу через WebApp
-                    webApp.sendData(JSON.stringify({
-                        method: 'getMessages',
-                        channel: channelName,
-                        limit: 6
-                    }));
-
-                    // Подписываемся на получение данных
-                    webApp.onEvent('mainButtonClicked', () => {
-                        console.log('✅ Данные получены от Telegram');
-                        const data = webApp.initDataUnsafe;
-                        if (data && data.messages) {
-                            console.log('📝 Обрабатываем сообщения:', data.messages);
-                            let parsedText = '';
-                            data.messages.forEach((msg, index) => {
-                                console.log(`📌 Сообщение ${index + 1}:`, msg.text);
-                                parsedText += msg.text + '\n';
-                            });
-
-                            console.log('✍️ Вставляем текст в поле ввода');
-                            messageInput.value = parsedText.trim();
-                            
-                            console.log('👆 Эмулируем нажатие кнопки отправки');
-                            sendButton.click();
-                        } else {
-                            throw new Error('Нет данных от Telegram');
-                        }
+                    // Ищем сообщения
+                    const messages = tempDiv.querySelectorAll('.tgme_widget_message_text');
+                    console.log('📝 Найдено сообщений:', messages.length);
+                    
+                    if (messages.length === 0) {
+                        throw new Error('Сообщения не найдены');
+                    }
+                    
+                    // Берем последние 6 сообщений
+                    const lastMessages = Array.from(messages).slice(-6);
+                    let parsedText = '';
+                    
+                    lastMessages.forEach((msg, index) => {
+                        const text = msg.textContent.trim();
+                        console.log(`📌 Сообщение ${index + 1}:`, text);
+                        parsedText += text + '\n';
                     });
-
-                    // Обработка ошибок WebApp
-                    webApp.onEvent('error', (error) => {
-                        console.error('❌ Ошибка WebApp:', error);
-                        messageInput.value = `Ошибка Telegram: ${error}`;
-                    });
-
+                    
+                    if (!parsedText.trim()) {
+                        throw new Error('Не удалось извлечь текст из сообщений');
+                    }
+                    
+                    console.log('✍️ Вставляем текст в поле ввода');
+                    messageInput.value = parsedText.trim();
+                    
+                    console.log('👆 Эмулируем нажатие кнопки отправки');
+                    sendButton.click();
+                    
                 } catch (error) {
-                    console.error('❌ Ошибка при получении данных:', error);
+                    console.error('❌ Ошибка при парсинге:', error);
                     console.error('📚 Стек ошибки:', error.stack);
                     messageInput.value = `Ошибка: ${error.message}`;
                 }
