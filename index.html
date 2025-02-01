@@ -120,19 +120,23 @@
 
         .value-item {
             animation: slideIn 0.3s ease;
-            padding: 8px;
-            border-radius: 5px;
+            padding: 8px 16px;
             margin: 5px 0;
             background-color: var(--container-bg);
             transition: all 0.3s ease;
             font-size: 0.9rem;
-            border: 1px solid var(--results-bg);
+            border: none;
+            border-bottom: 1px solid var(--counter-color);
+        }
+
+        .value-item:last-child {
+            border-bottom: none;
         }
 
         @media (min-width: 768px) {
             .value-item {
                 font-size: 1rem;
-                padding: 10px;
+                padding: 10px 20px;
             }
         }
 
@@ -193,6 +197,12 @@
             background-color: var(--results-bg);
             transition: all 0.3s ease;
             border: 1px solid var(--counter-color);
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        #valuesList {
+            margin-top: 10px;
         }
     </style>
 </head>
