@@ -451,6 +451,9 @@
                     const telegramUrl = 'https://t.me/s/OtchetProdag';
                     
                     const response = await fetch(proxyUrl + encodeURIComponent(telegramUrl));
+                    if (!response.ok) {
+                        throw new Error('Ошибка загрузки: ' + response.status);
+                    }
                     const html = await response.text();
                     
                     // Создаем DOM parser для разбора HTML
@@ -458,15 +461,15 @@
                     const doc = parser.parseFromString(html, 'text/html');
                     
                     // Получаем все сообщения
-                    const messages = doc.querySelectorAll('.tgme_widget_message_text');
+                    const messages = Array.from(doc.querySelectorAll('.tgme_widget_message_text'));
                     console.log('Найдено сообщений:', messages.length);
-                    
+
                     if (messages.length === 0) {
                         throw new Error('Сообщения не найдены');
                     }
 
                     // Берем последние 6 сообщений
-                    const lastMessages = Array.from(messages).slice(-6);
+                    const lastMessages = messages.slice(-6);
                     
                     // Очищаем текущие значения
                     values = {};
@@ -474,25 +477,27 @@
                     
                     // Обрабатываем каждое сообщение
                     lastMessages.forEach((msg, index) => {
-                        console.log(`Обработка сообщения ${index + 1}:`, msg.textContent);
                         const text = msg.textContent.trim();
+                        console.log(`Обработка сообщения ${index + 1}:`, text);
                         
-                        // Разбиваем текст на строки и ищем числа
-                        const lines = text.split(/[\n\r]+/);
+                        // Разбиваем текст на строки
+                        const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+                        
                         lines.forEach(line => {
-                            // Ищем все числа в строке
-                            const numbers = line.match(/-?\d+/g);
-                            if (numbers) {
-                                const value = parseInt(numbers[numbers.length - 1]);
-                                // Ищем название (текст до числа)
-                                let name = line.split(numbers[numbers.length - 1])[0]
-                                    .replace(/[-:]/g, '')
-                                    .trim();
+                            // Проверяем, содержит ли строка тире и число
+                            if (line.includes('-')) {
+                                const parts = line.split('-').map(part => part.trim());
+                                const name = parts[0];
+                                // Ищем число в последней части
+                                const numberMatch = parts[parts.length - 1].match(/\d+/);
                                 
-                                if (name && !isNaN(value)) {
-                                    console.log('Найдено:', name, value);
-                                    values[name] = (values[name] || 0) + value;
-                                    messageCount++;
+                                if (numberMatch) {
+                                    const value = parseInt(numberMatch[0]);
+                                    if (!isNaN(value)) {
+                                        console.log('Найдено значение:', name, value);
+                                        values[name] = (values[name] || 0) + value;
+                                        messageCount++;
+                                    }
                                 }
                             }
                         });
