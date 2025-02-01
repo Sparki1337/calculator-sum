@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="dark" data-version="1.0.1">
+<html lang="ru" data-theme="dark" data-version="1.0.2">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -252,12 +252,11 @@
 
     <script>
         // Версия приложения
-        const APP_VERSION = '1.0.1';
+        const APP_VERSION = '1.0.2';
 
         // Функция для принудительного обновления страницы без кэша
         function forceRefresh() {
-            const timestamp = new Date().getTime();
-            window.location.href = window.location.pathname + '?v=' + APP_VERSION + '&t=' + timestamp;
+            window.location.href = window.location.pathname;
         }
 
         // Функция для очистки кэша
@@ -275,25 +274,14 @@
                     await Promise.all(registrations.map(registration => registration.unregister()));
                 }
 
-                // Очищаем Application Cache
-                try {
-                    window.applicationCache.update();
-                } catch (e) {
-                    console.log('AppCache update failed:', e);
-                }
-
                 // Очищаем localStorage кроме темы
                 const theme = localStorage.getItem('theme');
+                const values = localStorage.getItem('calculatorValues');
+                const count = localStorage.getItem('messageCount');
                 localStorage.clear();
-                if (theme) {
-                    localStorage.setItem('theme', theme);
-                }
-
-                // Добавляем мета-теги для предотвращения кэширования
-                const meta = document.createElement('meta');
-                meta.httpEquiv = 'last-modified';
-                meta.content = new Date().toUTCString();
-                document.head.appendChild(meta);
+                if (theme) localStorage.setItem('theme', theme);
+                if (values) localStorage.setItem('calculatorValues', values);
+                if (count) localStorage.setItem('messageCount', count);
             } catch (error) {
                 console.error('Ошибка при очистке кэша:', error);
             }
@@ -311,13 +299,6 @@
             let values = {};
             let messageCount = 0;
             const MAX_MESSAGES = 6;
-
-            // Проверяем версию при загрузке
-            const savedVersion = localStorage.getItem('app_version');
-            if (savedVersion !== APP_VERSION) {
-                localStorage.setItem('app_version', APP_VERSION);
-                clearCache().then(() => forceRefresh());
-            }
 
             // Обновленная функция установки темы
             function setTheme(isDark) {
@@ -343,21 +324,22 @@
                         }
                     }
                 });
-
-                // Добавляем временную метку для предотвращения кэширования стилей
-                const timestamp = new Date().getTime();
-                document.documentElement.style.setProperty('--cache-buster', `'${timestamp}'`);
             }
 
             // Обновленный обработчик клика по кнопке смены темы
-            themeToggle.addEventListener('click', async () => {
+            themeToggle.addEventListener('click', () => {
                 const currentTheme = document.documentElement.getAttribute('data-theme');
                 const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
                 setTheme(newTheme === 'dark');
-                
-                await clearCache();
-                forceRefresh();
             });
+
+            // Загрузка сохраненной темы при старте
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                setTheme(savedTheme === 'dark');
+            } else {
+                setTheme(true); // Темная тема по умолчанию
+            }
 
             function parseLine(line) {
                 const parts = line.split('-');
