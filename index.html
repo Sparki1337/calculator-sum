@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark" data-version="1.0.2">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, private">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="-1">
+    <title>Калькулятор сумм</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --container-bg: white;
+            --text-color: #212529;
+            --results-bg: #f8f9fa;
+            --counter-color: #6c757d;
+            --input-bg: white;
+            --input-text: #212529;
+            --shadow-color: rgba(0,0,0,0.2);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #212529;
+            --container-bg: #343a40;
+            --text-color: #f8f9fa;
+            --results-bg: #2c3136;
+            --counter-color: #adb5bd;
+            --input-bg: #2c3136;
+            --input-text: #ffffff;
+            --shadow-color: rgba(0,0,0,0.4);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            padding: 10px;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 100%;
+            background-color: var(--container-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px var(--shadow-color);
+            transition: all 0.3s ease;
+            animation: fadeIn 1s;
+            margin: 10px auto;
+        }
+
+        @media (min-width: 768px) {
+            body {
+                padding: 20px;
+            }
+            .container {
+                max-width: 90%;
+                padding: 30px;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .container {
+                max-width: 800px;
+            }
+        }
+
+        .btn-custom {
+            margin: 5px;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            padding: 8px 16px;
+        }
+
+        @media (min-width: 768px) {
+            .btn-custom {
+                font-size: 1rem;
+                padding: 10px 20px;
+            }
+        }
+
+        .btn-custom:hover {
+            transform: scale(1.05);
+        }
+
+        .message-counter {
+            color: var(--counter-color);
+            font-size: 0.85rem;
+            margin-top: 10px;
+            transition: color 0.3s ease;
+        }
+
+        @media (min-width: 768px) {
+            .message-counter {
+                font-size: 0.9rem;
+            }
+        }
+
+        .theme-switch {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            font-size: 0.8rem;
+            padding: 5px 10px;
+            transition: all 0.3s ease;
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            border-color: var(--text-color);
+        }
+
+        .theme-switch:hover {
+            background-color: var(--text-color);
+            color: var(--bg-color);
+        }
+
+        .value-item {
+            animation: slideIn 0.3s ease;
+            padding: 8px 16px;
+            margin: 5px 0;
+            background-color: var(--container-bg);
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            border: none;
+            border-bottom: 1px solid var(--counter-color);
+        }
+
+        .value-item:last-child {
+            border-bottom: none;
+        }
+
+        @media (min-width: 768px) {
+            .value-item {
+                font-size: 1rem;
+                padding: 10px 20px;
+            }
+        }
+
+        .textarea-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .textarea-container textarea {
+            background-color: var(--input-bg);
+            color: var(--input-text) !important;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            min-height: 100px;
+            border-color: var(--counter-color);
+        }
+
+        .textarea-container textarea::placeholder {
+            color: var(--input-text);
+            opacity: 0.6;
+        }
+
+        @media (min-width: 768px) {
+            .textarea-container textarea {
+                font-size: 1rem;
+                min-height: 120px;
+            }
+        }
+
+        .textarea-container textarea:focus {
+            background-color: var(--input-bg);
+            color: var(--input-text);
+            box-shadow: 0 0 10px var(--shadow-color);
+            border-color: var(--text-color);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+        }
+
+        h4 {
+            font-size: 1.2rem;
+        }
+
+        @media (min-width: 768px) {
+            h4 {
+                font-size: 1.5rem;
+            }
+        }
+
+        .form-label {
+            color: var(--text-color);
+            transition: color 0.3s ease;
+        }
+
+        #results {
+            background-color: var(--results-bg);
+            transition: all 0.3s ease;
+            border: 1px solid var(--counter-color);
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        #valuesList {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <button class="btn btn-outline-primary theme-switch" id="themeToggle">
+        🌓 Сменить тему
+    </button>
+
+    <div class="container">
+        <h1 class="text-center mb-4 animate__animated animate__fadeIn">Калькулятор сумм</h1>
+        
+        <div class="row mb-4">
+            <div class="col text-center">
+                <button id="newCount" class="btn btn-primary btn-custom animate__animated animate__fadeIn">
+                    📝 Новый подсчет
+                </button>
+                <button id="clear" class="btn btn-secondary btn-custom animate__animated animate__fadeIn">
+                    🔄 Очистить
+                </button>
+            </div>
+        </div>
+
+        <div class="textarea-container">
+            <label for="messageInput" class="form-label">Вставьте данные в формате: Название - число или Название: число</label>
+            <textarea class="form-control" id="messageInput" rows="4" 
+                      placeholder="Примеры:&#10;Продукты - 1000&#10;Транспорт: 500"></textarea>
+        </div>
+        
+        <div class="text-center">
+            <button id="send" class="btn btn-success animate__animated animate__fadeIn">Отправить</button>
+        </div>
+
+        <div id="results" class="mt-4">
+            <h4>Результаты:</h4>
+            <div id="valuesList"></div>
+            <div class="message-counter" id="messageCounter"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Если в URL есть параметры, удаляем их
+            if (window.location.search) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('send');
+            const newCountButton = document.getElementById('newCount');
+            const clearButton = document.getElementById('clear');
+            const valuesList = document.getElementById('valuesList');
+            const messageCounter = document.getElementById('messageCounter');
+            const themeToggle = document.getElementById('themeToggle');
+
+            let values = {};
+            let messageCount = 0;
+            const MAX_MESSAGES = 6;
+
+            // Обновленная функция установки темы
+            function setTheme(isDark) {
+                document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                
+                // Обновляем цвета для Bootstrap кнопок
+                const buttons = document.querySelectorAll('.btn');
+                buttons.forEach(button => {
+                    if (isDark) {
+                        if (!button.classList.contains('btn-success') && 
+                            !button.classList.contains('btn-primary') && 
+                            !button.classList.contains('btn-secondary')) {
+                            button.classList.add('btn-dark');
+                            button.classList.remove('btn-light');
+                        }
+                    } else {
+                        if (!button.classList.contains('btn-success') && 
+                            !button.classList.contains('btn-primary') && 
+                            !button.classList.contains('btn-secondary')) {
+                            button.classList.add('btn-light');
+                            button.classList.remove('btn-dark');
+                        }
+                    }
+                });
+            }
+
+            // Обновленный обработчик клика по кнопке смены темы
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                setTheme(newTheme === 'dark');
+            });
+
+            // Загрузка сохраненной темы при старте
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                setTheme(savedTheme === 'dark');
+            } else {
+                setTheme(true); // Темная тема по умолчанию
+            }
+
+            function parseLine(line) {
+                const parts = line.split('-');
+                if (parts.length >= 2) {
+                    const name = parts[0].trim();
+                    const valuePart = parts.slice(1).join('-').trim();
+                    const value = parseInt(valuePart);
+                    if (!isNaN(value)) {
+                        return [name, value];
+                    }
+                }
+                return null;
+            }
+
+            function updateResults() {
+                valuesList.innerHTML = Object.entries(values)
+                    .map(([name, value]) => `
+                        <div class="value-item">
+                            ${name}: ${value}
+                        </div>
+                    `)
+                    .join('');
+                
+                messageCounter.textContent = `Отправлено ${messageCount} из ${MAX_MESSAGES} сообщений`;
+                
+                if (messageCount >= MAX_MESSAGES) {
+                    messageCounter.textContent += "\nДостигнут лимит сообщений. Следующее сообщение начнет новый отсчет.";
+                }
+            }
+
+            sendButton.addEventListener('click', () => {
+                const message = messageInput.value.trim();
+                if (!message) return;
+
+                messageCount++;
+                if (messageCount > MAX_MESSAGES) {
+                    values = {};
+                    messageCount = 1;
+                }
+
+                const lines = message.split('\n');
+                for (const line of lines) {
+                    const result = parseLine(line);
+                    if (result) {
+                        const [name, value] = result;
+                        values[name] = (values[name] || 0) + value;
+                    }
+                }
+
+                updateResults();
+                messageInput.value = '';
+
+                // Анимация кнопки
+                sendButton.classList.add('animate__animated', 'animate__pulse');
+                setTimeout(() => {
+                    sendButton.classList.remove('animate__animated', 'animate__pulse');
+                }, 500);
+            });
+
+            newCountButton.addEventListener('click', () => {
+                values = {};
+                messageCount = 0;
+                valuesList.innerHTML = '';
+                messageCounter.textContent = 'Начат новый подсчет';
+                
+                // Анимация кнопки
+                newCountButton.classList.add('animate__animated', 'animate__rubberBand');
+                setTimeout(() => {
+                    newCountButton.classList.remove('animate__animated', 'animate__rubberBand');
+                }, 500);
+            });
+
+            clearButton.addEventListener('click', () => {
+                values = {};
+                messageCount = 0;
+                valuesList.innerHTML = '';
+                messageCounter.textContent = 'История очищена';
+                
+                // Анимация кнопки
+                clearButton.classList.add('animate__animated', 'animate__rubberBand');
+                setTimeout(() => {
+                    clearButton.classList.remove('animate__animated', 'animate__rubberBand');
+                }, 500);
+            });
+
+            // Сохранение данных в localStorage
+            window.addEventListener('beforeunload', () => {
+                localStorage.setItem('calculatorValues', JSON.stringify(values));
+                localStorage.setItem('messageCount', messageCount);
+            });
+
+            // Загрузка данных из localStorage
+            const savedValues = localStorage.getItem('calculatorValues');
+            const savedCount = localStorage.getItem('messageCount');
+            if (savedValues && savedCount) {
+                values = JSON.parse(savedValues);
+                messageCount = parseInt(savedCount);
+                updateResults();
+            }
+
+            // Добавляем обработку клавиатурных сокращений
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    sendButton.click();
+                }
+            });
+
+            // Добавляем поддержку свайпов для мобильных устройств
+            let touchStartX = 0;
+            let touchEndX = 0;
+
+            document.addEventListener('touchstart', e => {
+                touchStartX = e.changedTouches[0].screenX;
+            });
+
+            document.addEventListener('touchend', e => {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            });
+
+            function handleSwipe() {
+                const swipeDistance = touchEndX - touchStartX;
+                if (Math.abs(swipeDistance) > 100) { // Минимальное расстояние для свайпа
+                    if (swipeDistance > 0) {
+                        // Свайп вправо - новый подсчет
+                        newCountButton.click();
+                    } else {
+                        // Свайп влево - очистить
+                        clearButton.click();
+                    }
+                }
+            }
+
+            // Добавляем функцию для парсинга Telegram
+            async function parseTelegramChannel() {
+                try {
+                    console.log('🚀 Начинаем парсинг Telegram канала...');
+                    
+                    // Создаем URL для запроса
+                    const channelUrl = 'https://t.me/s/OtchetProdag';
+                    console.log('📡 Запрашиваем данные с:', channelUrl);
+                    
+                    // Делаем запрос напрямую
+                    const response = await fetch(channelUrl);
+                    console.log('📥 Получен ответ:', response.status, response.statusText);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Ошибка загрузки: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const html = await response.text();
+                    console.log('📄 Получен HTML:', html.length, 'символов');
+                    
+                    // Создаем временный элемент для парсинга HTML
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = html;
+                    
+                    // Ищем сообщения
+                    const messages = tempDiv.querySelectorAll('.tgme_widget_message_text');
+                    console.log('📝 Найдено сообщений:', messages.length);
+                    
+                    if (messages.length === 0) {
+                        throw new Error('Сообщения не найдены');
+                    }
+                    
+                    // Берем последние 6 сообщений
+                    const lastMessages = Array.from(messages).slice(-6);
+                    let parsedText = '';
+                    
+                    lastMessages.forEach((msg, index) => {
+                        const text = msg.textContent.trim();
+                        console.log(`📌 Сообщение ${index + 1}:`, text);
+                        parsedText += text + '\n';
+                    });
+                    
+                    if (!parsedText.trim()) {
+                        throw new Error('Не удалось извлечь текст из сообщений');
+                    }
+                    
+                    console.log('✍️ Вставляем текст в поле ввода');
+                    messageInput.value = parsedText.trim();
+                    
+                    console.log('👆 Эмулируем нажатие кнопки отправки');
+                    sendButton.click();
+                    
+                } catch (error) {
+                    console.error('❌ Ошибка при парсинге:', error);
+                    console.error('📚 Стек ошибки:', error.stack);
+                    messageInput.value = `Ошибка: ${error.message}`;
+                }
+            }
+
+            // Добавляем кнопку для парсинга
+            const parseButton = document.createElement('button');
+            parseButton.id = 'parseButton';
+            parseButton.className = 'btn btn-info btn-custom animate__animated animate__fadeIn';
+            parseButton.innerHTML = '📱 Загрузить из Telegram';
+            parseButton.onclick = parseTelegramChannel;
+
+            // Добавляем кнопку после кнопки "Очистить"
+            clearButton.parentNode.insertBefore(parseButton, clearButton.nextSibling);
+        });
+    </script>
+</body>
+</html> 
