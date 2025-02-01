@@ -443,40 +443,70 @@
             // Добавляем функцию для парсинга Telegram
             async function parseTelegramChannel() {
                 try {
+                    console.log('🚀 Начинаем парсинг Telegram канала...');
                     const proxyUrl = 'https://corsproxy.io/?';
                     const targetUrl = encodeURIComponent('https://t.me/s/OtchetProdag');
                     
+                    console.log('📡 Отправляем запрос к:', targetUrl);
+                    console.log('🔄 Используем прокси:', proxyUrl);
+                    
                     const response = await fetch(proxyUrl + targetUrl);
+                    console.log('📥 Получен ответ:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        headers: Object.fromEntries(response.headers.entries())
+                    });
+                    
                     if (!response.ok) {
-                        throw new Error('Ошибка загрузки канала');
+                        throw new Error(`Ошибка загрузки канала: ${response.status} ${response.statusText}`);
                     }
                     
                     const html = await response.text();
+                    console.log('📄 Получен HTML:', html.length, 'символов');
+                    console.log('📋 Первые 200 символов:', html.substring(0, 200));
+                    
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
+                    console.log('🔍 HTML успешно распарсен');
                     
                     // Получаем сообщения
+                    console.log('🔎 Ищем сообщения по селектору .tgme_widget_message_text');
                     const messages = doc.querySelectorAll('.tgme_widget_message_text');
+                    console.log(`📊 Найдено сообщений: ${messages.length}`);
+                    
                     if (messages.length === 0) {
+                        console.log('❌ Сообщения не найдены. Проверяем структуру HTML...');
+                        console.log('📑 Доступные классы:', 
+                            Array.from(doc.querySelectorAll('*'))
+                                .map(el => el.className)
+                                .filter(Boolean)
+                                .filter((v, i, a) => a.indexOf(v) === i)
+                        );
                         throw new Error('Сообщения не найдены');
                     }
 
                     // Берем последние 6 сообщений
                     const lastMessages = Array.from(messages).slice(-6);
+                    console.log(`📝 Обрабатываем последние ${lastMessages.length} сообщений`);
                     let parsedText = '';
 
-                    lastMessages.forEach(msg => {
-                        parsedText += msg.textContent.trim() + '\n';
+                    lastMessages.forEach((msg, index) => {
+                        const text = msg.textContent.trim();
+                        console.log(`📌 Сообщение ${index + 1}:`, text);
+                        parsedText += text + '\n';
                     });
 
-                    // Вставляем текст в поле ввода
+                    console.log('✍️ Вставляем текст в поле ввода');
                     messageInput.value = parsedText.trim();
                     
-                    // Автоматически нажимаем кнопку отправки
+                    console.log('👆 Эмулируем нажатие кнопки отправки');
                     sendButton.click();
                     
+                    console.log('✅ Парсинг успешно завершен');
+                    
                 } catch (error) {
-                    console.error('Ошибка при парсинге:', error);
+                    console.error('❌ Ошибка при парсинге:', error);
+                    console.error('📚 Стек ошибки:', error.stack);
                     messageInput.value = `Ошибка: ${error.message}`;
                 }
             }
