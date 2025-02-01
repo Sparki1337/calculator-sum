@@ -224,15 +224,15 @@
                     🔄 Очистить
                 </button>
                 <button id="loadTelegram" class="btn btn-info btn-custom animate__animated animate__fadeIn">
-                    📱 Загрузить из Telegram
+                    📝 Обработать данные
                 </button>
             </div>
         </div>
 
         <div class="textarea-container">
-            <label for="messageInput" class="form-label">Введите данные в формате: Название - число</label>
+            <label for="messageInput" class="form-label">Вставьте данные в формате: Название - число или Название: число</label>
             <textarea class="form-control" id="messageInput" rows="4" 
-                      placeholder="Пример:&#10;Продукты - 1000&#10;Транспорт - 500"></textarea>
+                      placeholder="Примеры:&#10;Продукты - 1000&#10;Транспорт: 500"></textarea>
         </div>
         
         <div class="text-center">
@@ -446,32 +446,60 @@
                     loadTelegramButton.disabled = true;
                     loadTelegramButton.innerHTML = '⌛ Загрузка...';
 
-                    const response = await fetch('http://localhost:5000/parse-telegram');
-                    const data = await response.json();
-                    
-                    if (!data.success) {
-                        throw new Error(data.error || 'Ошибка при загрузке данных');
+                    // Получаем текст из поля ввода
+                    const text = messageInput.value.trim();
+                    if (!text) {
+                        throw new Error('Введите данные для обработки');
                     }
-                    
+
                     // Очищаем текущие значения
-                    values = data.data;
-                    messageCount = Object.keys(values).length;
+                    values = {};
+                    messageCount = 0;
+
+                    // Разбиваем текст на строки
+                    const lines = text.split('\n');
                     
+                    // Обрабатываем каждую строку
+                    for (const line of lines) {
+                        const trimmedLine = line.trim();
+                        if (trimmedLine) {
+                            // Проверяем наличие разделителя (тире или двоеточие)
+                            if (trimmedLine.includes('-') || trimmedLine.includes(':')) {
+                                const parts = trimmedLine.replace(':', '-').split('-');
+                                if (parts.length >= 2) {
+                                    const name = parts[0].trim();
+                                    // Ищем число в последней части
+                                    const numberMatch = parts[parts.length - 1].match(/\d+/);
+                                    if (numberMatch) {
+                                        const value = parseInt(numberMatch[0]);
+                                        if (!isNaN(value)) {
+                                            values[name] = (values[name] || 0) + value;
+                                            messageCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // Обновляем результаты
                     updateResults();
                     
                     if (Object.keys(values).length === 0) {
                         loadTelegramButton.innerHTML = '⚠️ Нет данных';
                     } else {
-                        loadTelegramButton.innerHTML = '✅ Загружено';
+                        loadTelegramButton.innerHTML = '✅ Обработано';
                     }
                     
+                    // Очищаем поле ввода
+                    messageInput.value = '';
+                    
                 } catch (error) {
-                    console.error('Ошибка при загрузке из Telegram:', error);
+                    console.error('Ошибка при обработке данных:', error);
                     loadTelegramButton.innerHTML = '❌ Ошибка: ' + error.message;
                 } finally {
                     setTimeout(() => {
-                        loadTelegramButton.innerHTML = '📱 Загрузить из Telegram';
+                        loadTelegramButton.innerHTML = '📝 Обработать данные';
                         loadTelegramButton.disabled = false;
                     }, 2000);
                 }
