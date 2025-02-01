@@ -233,25 +233,36 @@
     </div>
 
     <script>
-        // Функция для очистки кэша
-        function clearCache() {
-            if ('caches' in window) {
-                caches.keys().then(function(names) {
-                    for (let name of names) {
-                        caches.delete(name);
-                    }
-                });
-            }
-            // Очищаем localStorage, кроме темы
-            const theme = localStorage.getItem('theme');
-            localStorage.clear();
-            if (theme) {
-                localStorage.setItem('theme', theme);
-            }
+        // Функция для принудительного обновления страницы без кэша
+        function forceRefresh() {
+            window.location.reload(true);
         }
 
-        // Очищаем кэш при загрузке страницы
-        window.addEventListener('load', clearCache);
+        // Функция для очистки кэша
+        async function clearCache() {
+            try {
+                // Очищаем кэш браузера
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                }
+                
+                // Очищаем Service Worker если он есть
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(registrations.map(registration => registration.unregister()));
+                }
+
+                // Сохраняем только тему
+                const theme = localStorage.getItem('theme');
+                localStorage.clear();
+                if (theme) {
+                    localStorage.setItem('theme', theme);
+                }
+            } catch (error) {
+                console.error('Ошибка при очистке кэша:', error);
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             const messageInput = document.getElementById('messageInput');
@@ -266,7 +277,7 @@
             let messageCount = 0;
             const MAX_MESSAGES = 6;
 
-            // Тема
+            // Обновленная функция установки темы
             function setTheme(isDark) {
                 document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
                 localStorage.setItem('theme', isDark ? 'dark' : 'light');
@@ -275,28 +286,44 @@
                 const buttons = document.querySelectorAll('.btn');
                 buttons.forEach(button => {
                     if (isDark) {
-                        button.classList.add('btn-dark');
-                        button.classList.remove('btn-light');
+                        if (!button.classList.contains('btn-success') && 
+                            !button.classList.contains('btn-primary') && 
+                            !button.classList.contains('btn-secondary')) {
+                            button.classList.add('btn-dark');
+                            button.classList.remove('btn-light');
+                        }
                     } else {
-                        button.classList.add('btn-light');
-                        button.classList.remove('btn-dark');
+                        if (!button.classList.contains('btn-success') && 
+                            !button.classList.contains('btn-primary') && 
+                            !button.classList.contains('btn-secondary')) {
+                            button.classList.add('btn-light');
+                            button.classList.remove('btn-dark');
+                        }
                     }
                 });
             }
 
-            themeToggle.addEventListener('click', () => {
-                const isDark = document.body.getAttribute('data-theme') === 'dark';
-                setTheme(!isDark);
+            // Обновленный обработчик клика по кнопке смены темы
+            themeToggle.addEventListener('click', async () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                setTheme(newTheme === 'dark');
+                
+                // Очищаем кэш и перезагружаем страницу
+                await clearCache();
+                forceRefresh();
             });
 
-            // Загрузка сохраненной темы
+            // Загрузка сохраненной темы при старте
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme) {
                 setTheme(savedTheme === 'dark');
             } else {
-                // Устанавливаем темную тему по умолчанию
-                setTheme(true);
+                setTheme(true); // Темная тема по умолчанию
             }
+
+            // Очищаем кэш при загрузке страницы
+            clearCache();
 
             function parseLine(line) {
                 const parts = line.split('-');
