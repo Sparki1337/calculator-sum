@@ -15,7 +15,7 @@
 
 1. Клонируйте репозиторий:
 ```bash
-git clone https://github.com/ваш-username/calculator-sum.git
+git clone https://github.com/Sparki1337.calculator-sum.git
 cd calculator-sum
 ```
 
