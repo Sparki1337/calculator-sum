@@ -439,6 +439,57 @@
                     }
                 }
             }
+
+            // Добавляем функцию для парсинга Telegram
+            async function parseTelegramChannel() {
+                try {
+                    const proxyUrl = 'https://corsproxy.io/?';
+                    const targetUrl = encodeURIComponent('https://t.me/s/OtchetProdag');
+                    
+                    const response = await fetch(proxyUrl + targetUrl);
+                    if (!response.ok) {
+                        throw new Error('Ошибка загрузки канала');
+                    }
+                    
+                    const html = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Получаем сообщения
+                    const messages = doc.querySelectorAll('.tgme_widget_message_text');
+                    if (messages.length === 0) {
+                        throw new Error('Сообщения не найдены');
+                    }
+
+                    // Берем последние 6 сообщений
+                    const lastMessages = Array.from(messages).slice(-6);
+                    let parsedText = '';
+
+                    lastMessages.forEach(msg => {
+                        parsedText += msg.textContent.trim() + '\n';
+                    });
+
+                    // Вставляем текст в поле ввода
+                    messageInput.value = parsedText.trim();
+                    
+                    // Автоматически нажимаем кнопку отправки
+                    sendButton.click();
+                    
+                } catch (error) {
+                    console.error('Ошибка при парсинге:', error);
+                    messageInput.value = `Ошибка: ${error.message}`;
+                }
+            }
+
+            // Добавляем кнопку для парсинга
+            const parseButton = document.createElement('button');
+            parseButton.id = 'parseButton';
+            parseButton.className = 'btn btn-info btn-custom animate__animated animate__fadeIn';
+            parseButton.innerHTML = '📱 Загрузить из Telegram';
+            parseButton.onclick = parseTelegramChannel;
+
+            // Добавляем кнопку после кнопки "Очистить"
+            clearButton.parentNode.insertBefore(parseButton, clearButton.nextSibling);
         });
     </script>
 </body>
