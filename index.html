@@ -469,15 +469,34 @@
                     const doc = parser.parseFromString(html, 'text/html');
                     console.log('🔍 HTML успешно распарсен');
                     
-                    // Получаем сообщения
-                    console.log('🔎 Ищем сообщения по селектору .tgme_widget_message_text');
-                    const messages = doc.querySelectorAll('.tgme_widget_message_text');
-                    console.log(`📊 Найдено сообщений: ${messages.length}`);
-                    
+                    // Пробуем разные селекторы
+                    console.log('🔎 Ищем сообщения...');
+                    let messages = [];
+                    const selectors = [
+                        '.tgme_widget_message_text',
+                        '.tgme_widget_message_wrap',
+                        '.js-message_text',
+                        '.message_media_wrap',
+                        '.message',
+                        '[class*="message"]'
+                    ];
+
+                    for (const selector of selectors) {
+                        console.log(`📍 Пробуем селектор: ${selector}`);
+                        const found = doc.querySelectorAll(selector);
+                        if (found.length > 0) {
+                            console.log(`✅ Найдено ${found.length} элементов с селектором ${selector}`);
+                            messages = Array.from(found);
+                            break;
+                        }
+                    }
+
                     if (messages.length === 0) {
-                        console.log('❌ Сообщения не найдены. Проверяем структуру HTML...');
-                        console.log('📑 Доступные классы:', 
-                            Array.from(doc.querySelectorAll('*'))
+                        console.log('❌ Сообщения не найдены. Анализируем структуру HTML...');
+                        const allElements = doc.getElementsByTagName('*');
+                        console.log('📑 Все элементы на странице:', allElements.length);
+                        console.log('📑 Все классы на странице:', 
+                            Array.from(allElements)
                                 .map(el => el.className)
                                 .filter(Boolean)
                                 .filter((v, i, a) => a.indexOf(v) === i)
@@ -486,15 +505,31 @@
                     }
 
                     // Берем последние 6 сообщений
-                    const lastMessages = Array.from(messages).slice(-6);
+                    const lastMessages = messages.slice(-6);
                     console.log(`📝 Обрабатываем последние ${lastMessages.length} сообщений`);
                     let parsedText = '';
 
                     lastMessages.forEach((msg, index) => {
-                        const text = msg.textContent.trim();
+                        // Пробуем разные способы получения текста
+                        let text = '';
+                        if (msg.textContent) {
+                            text = msg.textContent.trim();
+                        } else if (msg.innerText) {
+                            text = msg.innerText.trim();
+                        } else if (msg.innerHTML) {
+                            // Удаляем HTML теги
+                            text = msg.innerHTML.replace(/<[^>]*>/g, '').trim();
+                        }
+                        
                         console.log(`📌 Сообщение ${index + 1}:`, text);
-                        parsedText += text + '\n';
+                        if (text) {
+                            parsedText += text + '\n';
+                        }
                     });
+
+                    if (!parsedText.trim()) {
+                        throw new Error('Не удалось извлечь текст из сообщений');
+                    }
 
                     console.log('✍️ Вставляем текст в поле ввода');
                     messageInput.value = parsedText.trim();
